@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SpendWise - Smart Expense & Budget Manager</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js for data visualization -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    .dark ::-webkit-scrollbar-thumb {
+      background: #334155;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 transition-colors duration-200 antialiased min-h-screen flex flex-col">
+
+  <header class="sticky top-0 z-30 bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white shadow-md shadow-indigo-500/20">
+          <i data-lucide="wallet-cards" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
+            SpendWise
+          </h1>
+          <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Smart Finance & Hashtag Tracker</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-2 sm:space-x-3">
+        <!-- Currency Selector -->
+        <select id="currencySelector" class="bg-slate-100 dark:bg-slate-800 border-0 text-xs sm:text-sm font-semibold rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-indigo-500 cursor-pointer text-slate-700 dark:text-slate-200">
+          <option value="₹">₹ INR</option>
+          <option value="$">$ USD</option>
+          <option value="€">€ EUR</option>
+          <option value="£">£ GBP</option>
+          <option value="AED ">AED</option>
+        </select>
+
+        <!-- Manage Categories Button -->
+        <button onclick="openCategoryModal()" class="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100/70 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+          <i data-lucide="sliders" class="w-3.5 h-3.5 text-indigo-500"></i>
+          <span>Categories</span>
+        </button>
+
+        <!-- Dark/Light Mode Switcher -->
+        <button id="themeToggleBtn" aria-label="Toggle theme" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+          <i id="themeIcon" data-lucide="moon" class="w-5 h-5 text-slate-600 dark:text-slate-300"></i>
+        </button>
+
+        <!-- Quick Add Trigger Button -->
+        <button onclick="openModal()" class="flex items-center space-x-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-xs sm:text-sm px-3.5 py-2 rounded-lg shadow-sm hover:shadow transition transform active:scale-95">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i>
+          <span class="hidden xs:inline">Add Entry</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+    <!-- Monthly Budget Tracker Alert -->
+    <section class="bg-gradient-to-r from-indigo-50/70 via-purple-50/50 to-pink-50/30 dark:from-slate-900 dark:via-indigo-950/40 dark:to-slate-900 rounded-2xl p-4 sm:p-5 border border-indigo-100/80 dark:border-indigo-900/50 shadow-sm">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-2">
+        <div class="flex items-center space-x-2">
+          <div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+            <i data-lucide="target" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h2 class="font-bold text-sm sm:text-base text-slate-900 dark:text-white">Monthly Expense Budget</h2>
+            <p id="budgetStatusText" class="text-xs text-slate-500 dark:text-slate-400">Calculating monthly cap...</p>
+          </div>
+        </div>
+        <div class="flex items-center space-x-2 w-full sm:w-auto justify-end">
+          <span class="text-xs font-semibold text-slate-600 dark:text-slate-300">Target:</span>
+          <div class="relative">
+            <span class="curr-symbol absolute left-2.5 top-1.5 text-xs text-slate-400 font-bold">₹</span>
+            <input type="number" id="budgetLimitInput" min="0" step="500" value="30000" class="w-28 pl-6 pr-2 py-1 text-xs sm:text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 font-semibold focus:ring-2 focus:ring-indigo-500 outline-none">
+          </div>
+        </div>
+      </div>
+      <div class="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-3 overflow-hidden mt-2">
+        <div id="budgetProgressBar" class="bg-indigo-600 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+      </div>
+    </section>
+
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- Total Balance Card -->
+      <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-sm relative">
+        <div class="flex justify-between items-start">
+          <div>
+            <p class="text-xs uppercase tracking-wider font-semibold text-slate-400 dark:text-slate-500">Total Balance</p>
+            <h3 id="totalBalanceEl" class="text-2xl font-extrabold mt-1 text-slate-900 dark:text-white">₹0.00</h3>
+          </div>
+          <div class="p-2.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-xl">
+            <i data-lucide="scale" class="w-5 h-5"></i>
+          </div>
+        </div>
+        <div class="mt-3 flex items-center text-xs text-slate-500 dark:text-slate-400">
+          <span id="savingsRateBadge" class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-semibold bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 mr-2">
+            0% saved
+          </span>
+          <span>Net cashflow</span>
+        </div>
+      </div>
+
+      <!-- Income Card -->
+      <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-sm">
+        <div class="flex justify-between items-start">
+          <div>
+            <p class="text-xs uppercase tracking-wider font-semibold text-emerald-600 dark:text-emerald-400">Total Income</p>
+            <h3 id="totalIncomeEl" class="text-2xl font-extrabold mt-1 text-emerald-600 dark:text-emerald-400">₹0.00</h3>
+          </div>
+          <div class="p-2.5 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-xl">
+            <i data-lucide="arrow-down-left" class="w-5 h-5"></i>
+          </div>
+        </div>
+        <p class="mt-3 text-xs text-slate-500 dark:text-slate-400" id="incomeCountText">0 credits</p>
+      </div>
+
+      <!-- Expense Card -->
+      <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-sm">
+        <div class="flex justify-between items-start">
+          <div>
+            <p class="text-xs uppercase tracking-wider font-semibold text-rose-600 dark:text-rose-400">Total Expenses</p>
+            <h3 id="totalExpenseEl" class="text-2xl font-extrabold mt-1 text-rose-600 dark:text-rose-400">₹0.00</h3>
+          </div>
+          <div class="p-2.5 bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-xl">
+            <i data-lucide="arrow-up-right" class="w-5 h-5"></i>
+          </div>
+        </div>
+        <p class="mt-3 text-xs text-slate-500 dark:text-slate-400" id="expenseCountText">0 debits</p>
+      </div>
+
+      <!-- Cash vs Online Breakdown Card -->
+      <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-sm">
+        <div class="flex justify-between items-start">
+          <div>
+            <p class="text-xs uppercase tracking-wider font-semibold text-slate-400 dark:text-slate-500">Method Split (Spent)</p>
+            <div class="flex items-center gap-3 mt-1.5">
+              <div>
+                <span class="text-xs text-slate-400 block">Cash</span>
+                <span id="cashSpendTotal" class="text-sm font-bold text-amber-600 dark:text-amber-400">₹0.00</span>
+              </div>
+              <div class="border-l border-slate-200 dark:border-slate-700 pl-3">
+                <span class="text-xs text-slate-400 block">Online / UPI</span>
+                <span id="onlineSpendTotal" class="text-sm font-bold text-cyan-600 dark:text-cyan-400">₹0.00</span>
+              </div>
+            </div>
+          </div>
+          <div class="p-2.5 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-xl">
+            <i data-lucide="credit-card" class="w-5 h-5"></i>
+          </div>
+        </div>
+        <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full mt-3 overflow-hidden flex">
+          <div id="cashRatioBar" class="bg-amber-500 h-full transition-all" style="width: 50%" title="Cash ratio"></div>
+          <div id="onlineRatioBar" class="bg-cyan-500 h-full transition-all" style="width: 50%" title="Online ratio"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-sm">
+      <div class="flex items-center justify-between mb-2.5">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="hash" class="w-4 h-4 text-indigo-500"></i>
+          <h3 class="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">Active Hashtags (#tags)</h3>
+          <span class="text-[11px] text-slate-400">Click to filter entries</span>
+        </div>
+        <button id="clearTagFilterBtn" onclick="clearSelectedTag()" class="hidden text-xs text-indigo-600 dark:text-indigo-400 font-semibold hover:underline">
+          Reset #tag filter
+        </button>
+      </div>
+      <div id="hashtagChipsContainer" class="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pt-1">
+        <!-- Rendered dynamically -->
+      </div>
+    </section>
+
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <!-- Chart: Category Breakdown -->
+      <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="font-bold text-base text-slate-900 dark:text-white">Expense by Category</h3>
+            <p class="text-xs text-slate-400">Custom categories reflected automatically</p>
+          </div>
+          <button onclick="openCategoryModal()" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
+            <i data-lucide="plus" class="w-3 h-3"></i> Add Category
+          </button>
+        </div>
+        <div class="relative flex-1 min-h-[240px] flex items-center justify-center">
+          <canvas id="categoryChart"></canvas>
+          <div id="noCategoryData" class="hidden absolute text-center text-xs text-slate-400">
+            <i data-lucide="folder-open" class="w-8 h-8 mx-auto mb-1 text-slate-300 dark:text-slate-600"></i>
+            No expense data yet
+          </div>
+        </div>
+      </div>
+
+      <!-- Chart: Monthly Timeline / Trend -->
+      <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="font-bold text-base text-slate-900 dark:text-white">Cashflow Trajectory</h3>
+            <p class="text-xs text-slate-400">Recent credits vs debits</p>
+          </div>
+          <span class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500">
+            <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+          </span>
+        </div>
+        <div class="relative flex-1 min-h-[240px] flex items-center justify-center">
+          <canvas id="trendChart"></canvas>
+          <div id="noTrendData" class="hidden absolute text-center text-xs text-slate-400">
+            <i data-lucide="trending-up" class="w-8 h-8 mx-auto mb-1 text-slate-300 dark:text-slate-600"></i>
+            No history recorded
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden">
+      <!-- Filter Bar -->
+      <div class="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 space-y-3">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h3 class="font-bold text-base sm:text-lg text-slate-900 dark:text-white">Transactions</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400" id="filterStatsText">Showing all records</p>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex items-center flex-wrap gap-2">
+            <button onclick="openCategoryModal()" class="sm:hidden px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-semibold flex items-center space-x-1 text-slate-700 dark:text-slate-300">
+              <i data-lucide="sliders" class="w-3.5 h-3.5 text-indigo-500"></i>
+              <span>Categories</span>
+            </button>
+            <button onclick="exportToCSV()" class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-semibold flex items-center space-x-1 transition text-slate-700 dark:text-slate-300">
+              <i data-lucide="download" class="w-3.5 h-3.5"></i>
+              <span>CSV</span>
+            </button>
+            <button onclick="exportToJSON()" class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-semibold flex items-center space-x-1 transition text-slate-700 dark:text-slate-300">
+              <i data-lucide="file-code" class="w-3.5 h-3.5"></i>
+              <span>JSON</span>
+            </button>
+            <button onclick="clearAllData()" class="px-2.5 py-1.5 rounded-lg border border-rose-200 dark:border-rose-900/50 hover:bg-rose-50 dark:hover:bg-rose-900/20 text-xs font-semibold text-rose-600 dark:text-rose-400 transition" title="Clear all data">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter Controls -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2.5 pt-2">
+          <!-- Search input with hashtag note -->
+          <div class="relative md:col-span-2">
+            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+            <input type="text" id="searchInput" placeholder="Search title or type #tag (e.g. #trip)..." class="w-full pl-9 pr-3 py-1.5 text-xs sm:text-sm rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+
+          <!-- Payment Method Filter -->
+          <div>
+            <select id="paymentMethodFilter" class="w-full px-3 py-1.5 text-xs sm:text-sm rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="ALL">All Methods (Cash & Online)</option>
+              <option value="ONLINE">💳 Online / UPI</option>
+              <option value="CASH">💵 Cash</option>
+            </select>
+          </div>
+
+          <!-- Category Filter -->
+          <div>
+            <select id="categoryFilter" class="w-full px-3 py-1.5 text-xs sm:text-sm rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="ALL">All Categories</option>
+              <!-- Dynamic populated from state.categories -->
+            </select>
+          </div>
+
+          <!-- Type & Sort -->
+          <div>
+            <select id="sortFilter" class="w-full px-3 py-1.5 text-xs sm:text-sm rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="date-desc">Newest Date</option>
+              <option value="date-asc">Oldest Date</option>
+              <option value="amount-desc">Highest Amount</option>
+              <option value="amount-asc">Lowest Amount</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Transactions List Table -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs sm:text-sm">
+          <thead class="bg-slate-50/75 dark:bg-slate-800/40 text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-100 dark:border-slate-800">
+            <tr>
+              <th class="py-3 px-4">Transaction & Hashtags</th>
+              <th class="py-3 px-4">Category</th>
+              <th class="py-3 px-4">Method</th>
+              <th class="py-3 px-4">Date</th>
+              <th class="py-3 px-4 text-right">Amount</th>
+              <th class="py-3 px-4 text-center">Action</th>
+            </tr>
+          </thead>
+          <tbody id="transactionsTableBody" class="divide-y divide-slate-100 dark:divide-slate-800">
+            <!-- Dynamic rows -->
+          </tbody>
+        </table>
+
+        <!-- Empty state placeholder -->
+        <div id="emptyListState" class="hidden py-12 text-center text-slate-400 space-y-2">
+          <i data-lucide="receipt-text" class="w-10 h-10 mx-auto text-slate-300 dark:text-slate-600"></i>
+          <p class="font-medium text-slate-700 dark:text-slate-300">No matching records</p>
+          <p class="text-xs">Try adjusting your #hashtag or search criteria.</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <div id="transactionModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-md rounded-2xl p-6 shadow-2xl relative transform transition-all">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 mb-4">
+        <h3 class="font-bold text-lg text-slate-900 dark:text-white" id="modalTitle">Add Transaction</h3>
+        <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="transactionForm" onsubmit="handleTransactionSubmit(event)" class="space-y-4">
+        <!-- Type Selection Toggle -->
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1.5">Type</label>
+          <div class="grid grid-cols-2 gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl">
+            <button type="button" id="typeExpenseBtn" onclick="setFormType('EXPENSE')" class="py-2 text-xs sm:text-sm font-semibold rounded-lg bg-white dark:bg-slate-700 text-rose-600 dark:text-rose-400 shadow-sm transition">
+              💸 Expense
+            </button>
+            <button type="button" id="typeIncomeBtn" onclick="setFormType('INCOME')" class="py-2 text-xs sm:text-sm font-semibold rounded-lg text-slate-600 dark:text-slate-300 hover:bg-white/50 transition">
+              💰 Income
+            </button>
+          </div>
+          <input type="hidden" id="formType" value="EXPENSE">
+        </div>
+
+        <!-- Description with Hashtag advice -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
+            Title / Note <span class="text-slate-400 font-normal">(add #tags like #trip #groceries)</span>
+          </label>
+          <input type="text" id="formTitle" required placeholder="e.g. Dinner with team #work #client" class="w-full px-3 py-2 text-sm rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+
+        <!-- Amount and Date in row -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Amount</label>
+            <div class="relative">
+              <span class="curr-symbol absolute left-3 top-2 text-slate-400 text-sm font-bold">₹</span>
+              <input type="number" step="any" min="0.01" id="formAmount" required placeholder="0.00" class="w-full pl-7 pr-3 py-2 text-sm rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-semibold">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Date</label>
+            <input type="date" id="formDate" required class="w-full px-3 py-2 text-sm rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+        </div>
+
+        <!-- Payment Method Toggle: Cash vs Online -->
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1.5">Payment Method</label>
+          <div class="grid grid-cols-2 gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl">
+            <button type="button" id="payOnlineBtn" onclick="setPaymentMethod('ONLINE')" class="py-2 text-xs sm:text-sm font-semibold rounded-lg bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm transition flex items-center justify-center space-x-1.5">
+              <span>💳 Online / UPI</span>
+            </button>
+            <button type="button" id="payCashBtn" onclick="setPaymentMethod('CASH')" class="py-2 text-xs sm:text-sm font-semibold rounded-lg text-slate-600 dark:text-slate-300 hover:bg-white/50 transition flex items-center justify-center space-x-1.5">
+              <span>💵 Cash</span>
+            </button>
+          </div>
+          <input type="hidden" id="formPaymentMethod" value="ONLINE">
+        </div>
+
+        <!-- Category -->
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300">Category</label>
+            <button type="button" onclick="openCategoryModal()" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">
+              + Custom
+            </button>
+          </div>
+          <select id="formCategory" class="w-full px-3 py-2 text-sm rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <!-- Dynamically populated -->
+          </select>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex items-center justify-end space-x-2 pt-2">
+          <button type="button" onclick="closeModal()" class="px-4 py-2 text-sm font-medium rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+            Cancel
+          </button>
+          <button type="submit" class="px-5 py-2 text-sm font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm transition">
+            Save Record
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="categoryModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-lg rounded-2xl p-6 shadow-2xl relative max-h-[90vh] flex flex-col">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 mb-4">
+        <div>
+          <h3 class="font-bold text-lg text-slate-900 dark:text-white">Custom Categories</h3>
+          <p class="text-xs text-slate-400">Add or manage expense and income categories</p>
+        </div>
+        <button onclick="closeCategoryModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Add New Category Subform -->
+      <form id="newCategoryForm" onsubmit="handleCreateCategory(event)" class="space-y-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl mb-4 border border-slate-200/60 dark:border-slate-700">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div class="sm:col-span-2">
+            <label class="block text-[11px] font-semibold text-slate-500 mb-1">Category Name</label>
+            <input type="text" id="newCategoryName" required placeholder="e.g. Pet Care, Gym, Crypto" class="w-full px-2.5 py-1.5 text-xs rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-500 mb-1">Emoji / Icon</label>
+            <input type="text" id="newCategoryEmoji" maxlength="3" required value="🏷️" class="w-full px-2.5 py-1.5 text-xs text-center rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between pt-1">
+          <div class="flex items-center space-x-2">
+            <label class="text-[11px] font-semibold text-slate-500">Color:</label>
+            <input type="color" id="newCategoryColor" value="#6366f1" class="w-7 h-7 rounded border-0 cursor-pointer bg-transparent">
+          </div>
+          <button type="submit" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm transition flex items-center space-x-1">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+            <span>Add Category</span>
+          </button>
+        </div>
+      </form>
+
+      <!-- Category List -->
+      <div class="overflow-y-auto flex-1 pr-1 space-y-2" id="categoriesListContainer">
+        <!-- Rendered via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Toast message box -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition duration-300 pointer-events-none bg-slate-900 text-white dark:bg-white dark:text-slate-900 px-4 py-2.5 rounded-xl shadow-lg flex items-center space-x-2 text-sm font-medium">
+    <i id="toastIcon" data-lucide="check-circle" class="w-4 h-4 text-emerald-400 dark:text-emerald-600"></i>
+    <span id="toastMsg">Action complete</span>
+  </div>
+
+  <script>
+    // Built-in starter categories
+    const DEFAULT_CATEGORIES = [
+      { id: 'cat_food', name: 'Food & Dining', emoji: '🍔', color: '#f59e0b' },
+      { id: 'cat_transport', name: 'Transportation', emoji: '🚗', color: '#06b6d4' },
+      { id: 'cat_housing', name: 'Housing & Utilities', emoji: '💡', color: '#8b5cf6' },
+      { id: 'cat_shopping', name: 'Shopping & Lifestyle', emoji: '🛍️', color: '#ec4899' },
+      { id: 'cat_entertain', name: 'Entertainment', emoji: '🎬', color: '#6366f1' },
+      { id: 'cat_health', name: 'Health & Medical', emoji: '💊', color: '#10b981' },
+      { id: 'cat_salary', name: 'Salary & Earnings', emoji: '💰', color: '#22c55e' },
+      { id: 'cat_invest', name: 'Investments', emoji: '📈', color: '#3b82f6' },
+      { id: 'cat_others', name: 'Others', emoji: '📦', color: '#64748b' }
+    ];
+
+    // Seed dataset with hashtags and payment methods
+    const DEFAULT_TRANSACTIONS = [
+      { id: '1', title: 'Monthly Tech Salary #work #career', amount: 65000, type: 'INCOME', category: 'Salary & Earnings', paymentMethod: 'ONLINE', date: new Date(Date.now() - 86400000 * 5).toISOString().split('T')[0] },
+      { id: '2', title: 'Apartment Rent #home #bills', amount: 15000, type: 'EXPENSE', category: 'Housing & Utilities', paymentMethod: 'ONLINE', date: new Date(Date.now() - 86400000 * 4).toISOString().split('T')[0] },
+      { id: '3', title: 'Organic Vegetable Market #groceries #healthy', amount: 1400, type: 'EXPENSE', category: 'Food & Dining', paymentMethod: 'CASH', date: new Date(Date.now() - 86400000 * 3).toISOString().split('T')[0] },
+      { id: '4', title: 'Fuel refill for road trip #trip #travel', amount: 2200, type: 'EXPENSE', category: 'Transportation', paymentMethod: 'ONLINE', date: new Date(Date.now() - 86400000 * 2).toISOString().split('T')[0] },
+      { id: '5', title: 'Weekend street food with friends #foodie #fun', amount: 450, type: 'EXPENSE', category: 'Food & Dining', paymentMethod: 'CASH', date: new Date(Date.now() - 86400000 * 1).toISOString().split('T')[0] },
+      { id: '6', title: 'Freelance Mobile UI Project #work #design', amount: 12000, type: 'INCOME', category: 'Salary & Earnings', paymentMethod: 'ONLINE', date: new Date().toISOString().split('T')[0] }
+    ];
+
+    let state = {
+      transactions: [],
+      categories: [],
+      currency: '₹',
+      monthlyBudget: 35000,
+      selectedTag: null,
+      darkMode: false
+    };
+
+    let categoryChartInstance = null;
+    let trendChartInstance = null;
+
+    function loadState() {
+      try {
+        const savedTx = localStorage.getItem('spendwise_data_v2');
+        state.transactions = savedTx ? JSON.parse(savedTx) : [...DEFAULT_TRANSACTIONS];
+
+        const savedCats = localStorage.getItem('spendwise_categories_v2');
+        state.categories = savedCats ? JSON.parse(savedCats) : [...DEFAULT_CATEGORIES];
+
+        const savedCurr = localStorage.getItem('spendwise_currency');
+        if (savedCurr) state.currency = savedCurr;
+
+        const savedBudget = localStorage.getItem('spendwise_budget');
+        if (savedBudget) state.monthlyBudget = parseFloat(savedBudget);
+
+        const savedTheme = localStorage.getItem('spendwise_theme');
+        if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          state.darkMode = true;
+          document.documentElement.classList.add('dark');
+        } else {
+          state.darkMode = false;
+          document.documentElement.classList.remove('dark');
+        }
+      } catch (e) {
+        console.error("Storage error:", e);
+        state.transactions = [...DEFAULT_TRANSACTIONS];
+        state.categories = [...DEFAULT_CATEGORIES];
+      }
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem('spendwise_data_v2', JSON.stringify(state.transactions));
+        localStorage.setItem('spendwise_categories_v2', JSON.stringify(state.categories));
+        localStorage.setItem('spendwise_currency', state.currency);
+        localStorage.setItem('spendwise_budget', state.monthlyBudget.toString());
+      } catch (e) {
+        console.error("Save error:", e);
+      }
+    }
+
+    function extractHashtags(text) {
+      if (!text) return [];
+      const matches = text.match(/#[a-zA-Z0-9_\-]+/g);
+      return matches ? matches.map(tag => tag.toLowerCase()) : [];
+    }
+
+    function filterByHashtag(tag) {
+      if (state.selectedTag === tag) {
+        state.selectedTag = null;
+      } else {
+        state.selectedTag = tag;
+        // Optionally sync search input if empty
+        const searchInput = document.getElementById('searchInput');
+        if (!searchInput.value.trim()) {
+          searchInput.value = tag;
+        }
+      }
+      renderHashtagsCloud();
+      renderTransactionsTable();
+    }
+
+    function clearSelectedTag() {
+      state.selectedTag = null;
+      const searchInput = document.getElementById('searchInput');
+      if (searchInput.value.startsWith('#')) {
+        searchInput.value = '';
+      }
+      renderHashtagsCloud();
+      renderTransactionsTable();
+    }
+
+    function renderHashtagsCloud() {
+      const container = document.getElementById('hashtagChipsContainer');
+      const resetBtn = document.getElementById('clearTagFilterBtn');
+      const tagCountMap = {};
+
+      state.transactions.forEach(t => {
+        const tags = extractHashtags(t.title);
+        tags.forEach(tag => {
+          tagCountMap[tag] = (tagCountMap[tag] || 0) + 1;
+        });
+      });
+
+      const uniqueTags = Object.keys(tagCountMap).sort((a,b) => tagCountMap[b] - tagCountMap[a]);
+
+      if (state.selectedTag) {
+        resetBtn.classList.remove('hidden');
+      } else {
+        resetBtn.classList.add('hidden');
+      }
+
+      if (uniqueTags.length === 0) {
+        container.innerHTML = `<span class="text-xs text-slate-400 italic">No hashtags used yet. Add #tags to your transaction titles (e.g. #trip, #groceries).</span>`;
+        return;
+      }
+
+      container.innerHTML = uniqueTags.map(tag => {
+        const isSelected = state.selectedTag === tag;
+        const activeClass = isSelected
+          ? 'bg-indigo-600 text-white font-bold shadow-sm'
+          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-slate-700';
+
+        return `
+          <button onclick="filterByHashtag('${tag}')" class="px-2.5 py-1 rounded-full text-xs font-medium transition flex items-center space-x-1 ${activeClass}">
+            <span>${tag}</span>
+            <span class="text-[10px] px-1.5 py-0.2 rounded-full ${isSelected ? 'bg-indigo-800 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-500'}">
+              ${tagCountMap[tag]}
+            </span>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function openCategoryModal() {
+      renderCategoryList();
+      document.getElementById('categoryModal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeCategoryModal() {
+      document.getElementById('categoryModal').classList.add('hidden');
+    }
+
+    function handleCreateCategory(e) {
+      e.preventDefault();
+      const name = document.getElementById('newCategoryName').value.trim();
+      const emoji = document.getElementById('newCategoryEmoji').value.trim() || '🏷️';
+      const color = document.getElementById('newCategoryColor').value || '#6366f1';
+
+      if (!name) return;
+
+      if (state.categories.some(c => c.name.toLowerCase() === name.toLowerCase())) {
+        showToast("Category already exists", true);
+        return;
+      }
+
+      const newCat = {
+        id: 'cat_' + Date.now(),
+        name,
+        emoji,
+        color
+      };
+
+      state.categories.push(newCat);
+      saveState();
+      updateCategoryDropdowns();
+      renderCategoryList();
+      renderDashboard();
+      document.getElementById('newCategoryForm').reset();
+      showToast(`Category "${name}" created!`);
+    }
+
+    function deleteCategory(catId) {
+      const cat = state.categories.find(c => c.id === catId);
+      if (!cat) return;
+
+      const isUsed = state.transactions.some(t => t.category === cat.name);
+      if (isUsed) {
+        showToast(`Cannot delete: "${cat.name}" has transactions assigned`, true);
+        return;
+      }
+
+      state.categories = state.categories.filter(c => c.id !== catId);
+      saveState();
+      updateCategoryDropdowns();
+      renderCategoryList();
+      renderDashboard();
+      showToast("Category removed");
+    }
+
+    function renderCategoryList() {
+      const listContainer = document.getElementById('categoriesListContainer');
+      listContainer.innerHTML = state.categories.map(cat => {
+        const count = state.transactions.filter(t => t.category === cat.name).length;
+        return `
+          <div class="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-100 dark:border-slate-800">
+            <div class="flex items-center space-x-2.5">
+              <span class="text-base w-7 h-7 flex items-center justify-center rounded-lg shadow-xs" style="background-color: ${cat.color}20; color: ${cat.color};">
+                ${cat.emoji}
+              </span>
+              <div>
+                <p class="text-xs font-semibold text-slate-800 dark:text-slate-200">${escapeHtml(cat.name)}</p>
+                <p class="text-[11px] text-slate-400">${count} transactions</p>
+              </div>
+            </div>
+            <button onclick="deleteCategory('${cat.id}')" title="Delete category" class="p-1 text-slate-400 hover:text-rose-500 rounded">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+          </div>
+        `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    function updateCategoryDropdowns() {
+      const formCat = document.getElementById('formCategory');
+      const filterCat = document.getElementById('categoryFilter');
+      const curFilterVal = filterCat.value;
+
+      const optionsHtml = state.categories.map(c => 
+        `<option value="${escapeHtml(c.name)}">${c.emoji} ${escapeHtml(c.name)}</option>`
+      ).join('');
+
+      formCat.innerHTML = optionsHtml;
+      filterCat.innerHTML = `<option value="ALL">All Categories</option>` + optionsHtml;
+
+      if (curFilterVal && state.categories.some(c => c.name === curFilterVal)) {
+        filterCat.value = curFilterVal;
+      }
+    }
+
+    function setPaymentMethod(method) {
+      document.getElementById('formPaymentMethod').value = method;
+      const onlineBtn = document.getElementById('payOnlineBtn');
+      const cashBtn = document.getElementById('payCashBtn');
+
+      if (method === 'ONLINE') {
+        onlineBtn.className = "py-2 text-xs sm:text-sm font-semibold rounded-lg bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm transition flex items-center justify-center space-x-1.5";
+        cashBtn.className = "py-2 text-xs sm:text-sm font-semibold rounded-lg text-slate-600 dark:text-slate-300 hover:bg-white/50 transition flex items-center justify-center space-x-1.5";
+      } else {
+        cashBtn.className = "py-2 text-xs sm:text-sm font-semibold rounded-lg bg-white dark:bg-slate-700 text-amber-600 dark:text-amber-400 shadow-sm transition flex items-center justify-center space-x-1.5";
+        onlineBtn.className = "py-2 text-xs sm:text-sm font-semibold rounded-lg text-slate-600 dark:text-slate-300 hover:bg-white/50 transition flex items-center justify-center space-x-1.5";
+      }
+    }
+
+    function setFormType(type) {
+      document.getElementById('formType').value = type;
+      const expenseBtn = document.getElementById('typeExpenseBtn');
+      const incomeBtn = document.getElementById('typeIncomeBtn');
+      const categorySelect = document.getElementById('formCategory');
+
+      if (type === 'EXPENSE') {
+        expenseBtn.className = "py-2 text-xs sm:text-sm font-semibold rounded-lg bg-white dark:bg-slate-700 text-rose-600 dark:text-rose-400 shadow-sm transition";
+        incomeBtn.className = "py-2 text-xs sm:text-sm font-semibold rounded-lg text-slate-600 dark:text-slate-300 hover:bg-white/50 transition";
+        if (categorySelect.value === 'Salary & Earnings') {
+          const firstExp = state.categories.find(c => c.name !== 'Salary & Earnings');
+          if (firstExp) categorySelect.value = firstExp.name;
+        }
+      } else {
+        incomeBtn.className = "py-2 text-xs sm:text-sm font-semibold rounded-lg bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm transition";
+        expenseBtn.className = "py-2 text-xs sm:text-sm font-semibold rounded-lg text-slate-600 dark:text-slate-300 hover:bg-white/50 transition";
+        const salaryCat = state.categories.find(c => c.name === 'Salary & Earnings');
+        if (salaryCat) categorySelect.value = salaryCat.name;
+      }
+    }
+
+    function showToast(message, isError = false) {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toastMsg');
+      const toastIcon = document.getElementById('toastIcon');
+
+      toastMsg.textContent = message;
+      if (isError) {
+        toastIcon.setAttribute('data-lucide', 'alert-circle');
+        toastIcon.className = "w-4 h-4 text-rose-500";
+      } else {
+        toastIcon.setAttribute('data-lucide', 'check-circle');
+        toastIcon.className = "w-4 h-4 text-emerald-500";
+      }
+      lucide.createIcons();
+
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 2600);
+    }
+
+    function openModal() {
+      document.getElementById('transactionForm').reset();
+      document.getElementById('formDate').value = new Date().toISOString().split('T')[0];
+      setFormType('EXPENSE');
+      setPaymentMethod('ONLINE');
+      document.getElementById('transactionModal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('transactionModal').classList.add('hidden');
+    }
+
+    function handleTransactionSubmit(e) {
+      e.preventDefault();
+      const title = document.getElementById('formTitle').value.trim();
+      const amount = parseFloat(document.getElementById('formAmount').value);
+      const date = document.getElementById('formDate').value;
+      const category = document.getElementById('formCategory').value;
+      const type = document.getElementById('formType').value;
+      const paymentMethod = document.getElementById('formPaymentMethod').value;
+
+      if (!title || isNaN(amount) || amount <= 0 || !date) {
+        showToast("Please provide valid details", true);
+        return;
+      }
+
+      const newTx = {
+        id: Date.now().toString(),
+        title,
+        amount,
+        date,
+        category,
+        type,
+        paymentMethod: paymentMethod || 'ONLINE'
+      };
+
+      state.transactions.unshift(newTx);
+      saveState();
+      closeModal();
+      renderDashboard();
+      showToast("Transaction saved!");
+    }
+
+    function deleteTransaction(id) {
+      state.transactions = state.transactions.filter(t => t.id !== id);
+      saveState();
+      renderDashboard();
+      showToast("Transaction removed");
+    }
+
+    function getFilteredTransactions() {
+      const searchRaw = document.getElementById('searchInput').value.trim().toLowerCase();
+      const payMethod = document.getElementById('paymentMethodFilter').value;
+      const category = document.getElementById('categoryFilter').value;
+      const sort = document.getElementById('sortFilter').value;
+
+      return state.transactions.filter(t => {
+        const itemTags = extractHashtags(t.title);
+
+        // 1. Hashtag chip match
+        if (state.selectedTag && !itemTags.includes(state.selectedTag.toLowerCase())) {
+          return false;
+        }
+
+        // 2. Search box match (matches title, category, or hashtag)
+        if (searchRaw) {
+          const titleMatches = t.title.toLowerCase().includes(searchRaw);
+          const catMatches = t.category.toLowerCase().includes(searchRaw);
+          const tagMatches = itemTags.some(tag => tag.includes(searchRaw));
+          if (!titleMatches && !catMatches && !tagMatches) return false;
+        }
+
+        // 3. Payment Method Match
+        if (payMethod !== 'ALL' && t.paymentMethod !== payMethod) {
+          return false;
+        }
+
+        // 4. Category Match
+        if (category !== 'ALL' && t.category !== category) {
+          return false;
+        }
+
+        return true;
+      }).sort((a, b) => {
+        if (sort === 'date-desc') return new Date(b.date) - new Date(a.date);
+        if (sort === 'date-asc') return new Date(a.date) - new Date(b.date);
+        if (sort === 'amount-desc') return b.amount - a.amount;
+        if (sort === 'amount-asc') return a.amount - b.amount;
+        return 0;
+      });
+    }
+
+    function formatCurrency(amount) {
+      return state.currency + Number(amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function renderOverviewMetrics() {
+      let totalIncome = 0;
+      let totalExpense = 0;
+      let incomeCount = 0;
+      let expenseCount = 0;
+      let cashSpend = 0;
+      let onlineSpend = 0;
+
+      state.transactions.forEach(t => {
+        if (t.type === 'INCOME') {
+          totalIncome += t.amount;
+          incomeCount++;
+        } else {
+          totalExpense += t.amount;
+          expenseCount++;
+          if (t.paymentMethod === 'CASH') {
+            cashSpend += t.amount;
+          } else {
+            onlineSpend += t.amount;
+          }
+        }
+      });
+
+      const netBalance = totalIncome - totalExpense;
+
+      document.getElementById('totalBalanceEl').textContent = formatCurrency(netBalance);
+      document.getElementById('totalIncomeEl').textContent = formatCurrency(totalIncome);
+      document.getElementById('totalExpenseEl').textContent = formatCurrency(totalExpense);
+      document.getElementById('incomeCountText').textContent = `${incomeCount} credits recorded`;
+      document.getElementById('expenseCountText').textContent = `${expenseCount} debits recorded`;
+
+      // Cash vs Online display
+      document.getElementById('cashSpendTotal').textContent = formatCurrency(cashSpend);
+      document.getElementById('onlineSpendTotal').textContent = formatCurrency(onlineSpend);
+
+      const totalSpentForRatio = cashSpend + onlineSpend;
+      const cashPct = totalSpentForRatio > 0 ? (cashSpend / totalSpentForRatio) * 100 : 50;
+      const onlinePct = totalSpentForRatio > 0 ? (onlineSpend / totalSpentForRatio) * 100 : 50;
+      document.getElementById('cashRatioBar').style.width = `${cashPct}%`;
+      document.getElementById('onlineRatioBar').style.width = `${onlinePct}%`;
+
+      // Savings rate
+      const savingsRate = totalIncome > 0 ? Math.max(0, Math.round(((totalIncome - totalExpense) / totalIncome) * 100)) : 0;
+      const savingsBadge = document.getElementById('savingsRateBadge');
+      savingsBadge.textContent = `${savingsRate}% saved`;
+      if (savingsRate > 25) {
+        savingsBadge.className = "inline-flex items-center px-1.5 py-0.5 rounded text-xs font-semibold bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 mr-2";
+      } else if (savingsRate >= 10) {
+        savingsBadge.className = "inline-flex items-center px-1.5 py-0.5 rounded text-xs font-semibold bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 mr-2";
+      } else {
+        savingsBadge.className = "inline-flex items-center px-1.5 py-0.5 rounded text-xs font-semibold bg-rose-100 dark:bg-rose-900/50 text-rose-700 dark:text-rose-300 mr-2";
+      }
+
+      // Monthly Budget Status
+      const currentMonth = new Date().toISOString().slice(0, 7);
+      const monthlySpend = state.transactions
+        .filter(t => t.type === 'EXPENSE' && t.date.startsWith(currentMonth))
+        .reduce((sum, t) => sum + t.amount, 0);
+
+      const budgetLimit = state.monthlyBudget;
+      const budgetPct = budgetLimit > 0 ? Math.min(100, Math.round((monthlySpend / budgetLimit) * 100)) : 0;
+      
+      const progressBar = document.getElementById('budgetProgressBar');
+      const budgetStatus = document.getElementById('budgetStatusText');
+      progressBar.style.width = `${budgetPct}%`;
+
+      if (budgetPct >= 100) {
+        progressBar.className = "bg-rose-500 h-3 rounded-full transition-all duration-500";
+        budgetStatus.innerHTML = `<span class="text-rose-500 font-semibold">Over Budget!</span> Spent ${formatCurrency(monthlySpend)} of ${formatCurrency(budgetLimit)} target (${budgetPct}%)`;
+      } else if (budgetPct >= 80) {
+        progressBar.className = "bg-amber-500 h-3 rounded-full transition-all duration-500";
+        budgetStatus.innerHTML = `<span class="text-amber-500 font-semibold">Warning:</span> Spent ${formatCurrency(monthlySpend)} of ${formatCurrency(budgetLimit)} target (${budgetPct}%)`;
+      } else {
+        progressBar.className = "bg-indigo-600 h-3 rounded-full transition-all duration-500";
+        budgetStatus.textContent = `Spent ${formatCurrency(monthlySpend)} of ${formatCurrency(budgetLimit)} monthly target (${budgetPct}%)`;
+      }
+    }
+
+    function renderTransactionsTable() {
+      const filtered = getFilteredTransactions();
+      const tbody = document.getElementById('transactionsTableBody');
+      const emptyState = document.getElementById('emptyListState');
+      const filterStats = document.getElementById('filterStatsText');
+
+      filterStats.textContent = `Showing ${filtered.length} of ${state.transactions.length} records`;
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      tbody.innerHTML = filtered.map(t => {
+        const isIncome = t.type === 'INCOME';
+        const badgeColor = isIncome ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400' : 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400';
+        const amountPrefix = isIncome ? '+' : '-';
+        const amountClass = isIncome ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white';
+
+        // Payment Method badge
+        const isCash = t.paymentMethod === 'CASH';
+        const methodBadge = isCash 
+          ? `<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">💵 Cash</span>`
+          : `<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-cyan-50 dark:bg-cyan-950/40 text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800">💳 Online</span>`;
+
+        // Find Category metadata
+        const matchedCat = state.categories.find(c => c.name === t.category);
+        const catEmoji = matchedCat ? matchedCat.emoji : '📦';
+
+        // Convert #tags in title into clickable badges
+        const formattedTitle = escapeHtml(t.title).replace(/(#[a-zA-Z0-9_\-]+)/g, (match) => {
+          return `<button onclick="filterByHashtag('${match.toLowerCase()}')" class="text-indigo-600 dark:text-indigo-400 font-semibold hover:underline bg-indigo-50/70 dark:bg-indigo-950/40 px-1 rounded text-xs">${match}</button>`;
+        });
+
+        return `
+          <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition">
+            <td class="py-3 px-4">
+              <div class="flex items-center space-x-3">
+                <span class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-semibold ${badgeColor}">
+                  ${isIncome ? '↓' : '↑'}
+                </span>
+                <div class="flex flex-col">
+                  <span class="font-medium text-slate-800 dark:text-slate-200">${formattedTitle}</span>
+                </div>
+              </div>
+            </td>
+            <td class="py-3 px-4">
+              <span class="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                <span>${catEmoji}</span>
+                <span>${escapeHtml(t.category)}</span>
+              </span>
+            </td>
+            <td class="py-3 px-4">
+              ${methodBadge}
+            </td>
+            <td class="py-3 px-4 text-slate-500 dark:text-slate-400 text-xs">
+              ${t.date}
+            </td>
+            <td class="py-3 px-4 text-right font-bold font-mono ${amountClass}">
+              ${amountPrefix}${formatCurrency(t.amount)}
+            </td>
+            <td class="py-3 px-4 text-center">
+              <button onclick="deleteTransaction('${t.id}')" aria-label="Delete entry" class="text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition p-1 rounded">
+                <i data-lucide="trash" class="w-4 h-4"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>"']/g, function(m) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+      });
+    }
+
+    function renderCharts() {
+      // 1. Category Chart
+      const categoryTotals = {};
+      state.transactions
+        .filter(t => t.type === 'EXPENSE')
+        .forEach(t => {
+          categoryTotals[t.category] = (categoryTotals[t.category] || 0) + t.amount;
+        });
+
+      const catLabels = Object.keys(categoryTotals);
+      const catData = Object.values(categoryTotals);
+      const noCategoryEl = document.getElementById('noCategoryData');
+
+      // Map customized colors from category state
+      const catColors = catLabels.map(label => {
+        const cat = state.categories.find(c => c.name === label);
+        return cat ? cat.color : '#6366f1';
+      });
+
+      if (categoryChartInstance) categoryChartInstance.destroy();
+
+      if (catLabels.length === 0) {
+        noCategoryEl.classList.remove('hidden');
+      } else {
+        noCategoryEl.classList.add('hidden');
+        const ctxCat = document.getElementById('categoryChart').getContext('2d');
+        categoryChartInstance = new Chart(ctxCat, {
+          type: 'doughnut',
+          data: {
+            labels: catLabels,
+            datasets: [{
+              data: catData,
+              backgroundColor: catColors,
+              borderWidth: state.darkMode ? 2 : 1,
+              borderColor: state.darkMode ? '#0f172a' : '#ffffff'
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'right',
+                labels: {
+                  boxWidth: 12,
+                  font: { size: 11, family: 'Plus Jakarta Sans' },
+                  color: state.darkMode ? '#cbd5e1' : '#475569'
+                }
+              }
+            }
+          }
+        });
+      }
+
+      // 2. Trend Timeline Chart
+      const dateMap = {};
+      state.transactions.slice().sort((a,b) => new Date(a.date) - new Date(b.date)).forEach(t => {
+        const d = t.date;
+        if (!dateMap[d]) dateMap[d] = { income: 0, expense: 0 };
+        if (t.type === 'INCOME') dateMap[d].income += t.amount;
+        else dateMap[d].expense += t.amount;
+      });
+
+      const timelineDates = Object.keys(dateMap).slice(-7);
+      const trendIncome = timelineDates.map(d => dateMap[d].income);
+      const trendExpense = timelineDates.map(d => dateMap[d].expense);
+      const noTrendEl = document.getElementById('noTrendData');
+
+      if (trendChartInstance) trendChartInstance.destroy();
+
+      if (timelineDates.length === 0) {
+        noTrendEl.classList.remove('hidden');
+      } else {
+        noTrendEl.classList.add('hidden');
+        const ctxTrend = document.getElementById('trendChart').getContext('2d');
+        trendChartInstance = new Chart(ctxTrend, {
+          type: 'bar',
+          data: {
+            labels: timelineDates,
+            datasets: [
+              {
+                label: 'Income',
+                data: trendIncome,
+                backgroundColor: '#10b981',
+                borderRadius: 4
+              },
+              {
+                label: 'Expense',
+                data: trendExpense,
+                backgroundColor: '#f43f5e',
+                borderRadius: 4
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              x: {
+                grid: { display: false },
+                ticks: { font: { size: 10 }, color: state.darkMode ? '#94a3b8' : '#64748b' }
+              },
+              y: {
+                grid: { color: state.darkMode ? '#1e293b' : '#f1f5f9' },
+                ticks: { font: { size: 10 }, color: state.darkMode ? '#94a3b8' : '#64748b' }
+              }
+            },
+            plugins: {
+              legend: {
+                position: 'top',
+                labels: { boxWidth: 10, font: { size: 11 }, color: state.darkMode ? '#cbd5e1' : '#475569' }
+              }
+            }
+          }
+        });
+      }
+    }
+
+    function exportToCSV() {
+      if (state.transactions.length === 0) {
+        showToast("No data to export", true);
+        return;
+      }
+      const headers = ["ID", "Title", "Amount", "Type", "Category", "PaymentMethod", "Date"];
+      const rows = state.transactions.map(t => [
+        t.id,
+        `"${t.title.replace(/"/g, '""')}"`,
+        t.amount,
+        t.type,
+        `"${t.category}"`,
+        t.paymentMethod || 'ONLINE',
+        t.date
+      ]);
+      const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `spendwise_export_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast("CSV file exported successfully!");
+    }
+
+    function exportToJSON() {
+      if (state.transactions.length === 0) {
+        showToast("No data to export", true);
+        return;
+      }
+      const backup = {
+        transactions: state.transactions,
+        categories: state.categories,
+        budget: state.monthlyBudget,
+        currency: state.currency
+      };
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backup, null, 2));
+      const dlAnchorElem = document.createElement('a');
+      dlAnchorElem.setAttribute("href", dataStr);
+      dlAnchorElem.setAttribute("download", `spendwise_backup_${new Date().toISOString().split('T')[0]}.json`);
+      dlAnchorElem.click();
+      showToast("JSON backup exported!");
+    }
+
+    function clearAllData() {
+      state.transactions = [];
+      saveState();
+      renderDashboard();
+      showToast("All transaction records cleared");
+    }
+
+    function renderDashboard() {
+      document.querySelectorAll('.curr-symbol').forEach(el => el.textContent = state.currency);
+      renderOverviewMetrics();
+      renderHashtagsCloud();
+      renderTransactionsTable();
+      renderCharts();
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      loadState();
+      updateCategoryDropdowns();
+
+      // Currency dropdown
+      const currencySelector = document.getElementById('currencySelector');
+      currencySelector.value = state.currency;
+      currencySelector.addEventListener('change', (e) => {
+        state.currency = e.target.value;
+        saveState();
+        renderDashboard();
+      });
+
+      // Budget input listener
+      const budgetInput = document.getElementById('budgetLimitInput');
+      budgetInput.value = state.monthlyBudget;
+      budgetInput.addEventListener('change', (e) => {
+        const val = parseFloat(e.target.value) || 0;
+        state.monthlyBudget = val;
+        saveState();
+        renderOverviewMetrics();
+        showToast("Monthly target updated");
+      });
+
+      // Theme toggle
+      const themeToggleBtn = document.getElementById('themeToggleBtn');
+      const themeIcon = document.getElementById('themeIcon');
+      function updateThemeIcon() {
+        if (state.darkMode) {
+          themeIcon.setAttribute('data-lucide', 'sun');
+        } else {
+          themeIcon.setAttribute('data-lucide', 'moon');
+        }
+        lucide.createIcons();
+      }
+      updateThemeIcon();
+
+      themeToggleBtn.addEventListener('click', () => {
+        state.darkMode = !state.darkMode;
+        if (state.darkMode) {
+          document.documentElement.classList.add('dark');
+          localStorage.setItem('spendwise_theme', 'dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+          localStorage.setItem('spendwise_theme', 'light');
+        }
+        updateThemeIcon();
+        renderCharts();
+      });
+
+      // Filter events
+      ['searchInput', 'paymentMethodFilter', 'categoryFilter', 'sortFilter'].forEach(id => {
+        document.getElementById(id).addEventListener('input', () => {
+          renderTransactionsTable();
+        });
+      });
+
+      lucide.createIcons();
+      renderDashboard();
+    });
+  </script>
+</body>
+</html>
